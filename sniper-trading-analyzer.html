@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sniper Analyzer — Smart Money</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0A0A0F;--bg2:#111118;--bg3:#1A1A28;--panel:#14141F;--border:#2A2A3E;--green:#00FF88;--gdim:#00CC6A;--red:#FF3B5C;--amber:#FFB830;--blue:#4D9FFF;--text:#E8E8F0;--dim:#8888AA;--muted:#555570;--mono:'JetBrains Mono',monospace;--sans:'Space Grotesk',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+header{position:relative;z-index:10;padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,15,.97)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#000;font-weight:700}
+.logo-name{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.logo-sub{font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:2px}
+.online{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+main{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:32px 20px}
+
+.sec-label{font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* === UPLOAD ZONE === */
+.drop-zone{border:2px dashed var(--border);border-radius:14px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .3s;background:var(--panel);margin-bottom:20px}
+.drop-zone:hover,.drop-zone.over{border-color:var(--green);background:rgba(0,255,136,.04)}
+.dz-icon{font-size:44px;margin-bottom:14px;display:block}
+.dz-title{font-size:20px;font-weight:600;margin-bottom:8px}
+.dz-sub{font-size:13px;color:var(--dim);margin-bottom:22px;line-height:1.7}
+.dz-sub b{color:var(--green)}
+.btn-upload{background:var(--green);color:#000;font-family:var(--sans);font-weight:700;font-size:13px;padding:11px 26px;border-radius:7px;border:none;cursor:pointer;transition:all .2s}
+.btn-upload:hover{background:var(--gdim);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,255,136,.2)}
+#file-in{display:none}
+
+/* === THUMBS === */
+.thumbs-section{display:none;margin-bottom:20px}
+.thumbs-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.thumb-item{position:relative;width:100px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border);cursor:pointer;background:#000}
+.thumb-item img{width:100%;height:100%;object-fit:cover;opacity:.8;transition:opacity .2s}
+.thumb-item:hover img{opacity:1}
+.thumb-item.active{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,255,136,.3)}
+.thumb-del{position:absolute;top:3px;right:3px;width:18px;height:18px;background:rgba(255,59,92,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;cursor:pointer;z-index:2}
+.thumb-add{width:100px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--dim);font-size:11px;gap:4px;transition:all .2s}
+.thumb-add:hover{border-color:var(--green);color:var(--green)}
+.thumb-add-icon{font-size:22px}
+
+.tf-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.tf-label{font-family:var(--mono);font-size:11px;color:var(--dim);margin-bottom:6px}
+.tf-btn{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);cursor:pointer;transition:all .2s}
+.tf-btn.sel,.tf-btn:hover{border-color:var(--green);color:var(--green);background:rgba(0,255,136,.08)}
+
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn-analyze{background:var(--green);color:#000;font-family:var(--sans);font-weight:700;font-size:14px;padding:12px 30px;border-radius:8px;border:none;cursor:pointer;transition:all .2s}
+.btn-analyze:hover{background:var(--gdim);box-shadow:0 6px 20px rgba(0,255,136,.25)}
+.btn-reset{background:var(--bg3);color:var(--dim);font-family:var(--sans);font-size:13px;padding:12px 20px;border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.btn-reset:hover{color:var(--text);border-color:var(--dim)}
+
+/* === LOADING === */
+.loading{display:none;text-align:center;padding:60px 24px;background:var(--panel);border:1px solid var(--border);border-radius:14px;margin-bottom:20px}
+.spin-wrap{width:76px;height:76px;margin:0 auto 20px;position:relative}
+.spin-wrap::before,.spin-wrap::after{content:'';position:absolute;inset:0;border-radius:50%;border:2.5px solid transparent;border-top-color:var(--green);animation:spin 1s linear infinite}
+.spin-wrap::after{inset:10px;border-top-color:var(--blue);animation-delay:.25s;animation-duration:.75s}
+.spin-inner{position:absolute;inset:22px;border-radius:50%;background:rgba(0,255,136,.07);display:flex;align-items:center;justify-content:center;font-size:18px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-title{font-size:19px;font-weight:600;margin-bottom:6px}
+.loading-step{font-family:var(--mono);font-size:12px;color:var(--dim);min-height:20px}
+.prog-bar{width:280px;max-width:100%;height:3px;background:var(--border);border-radius:2px;margin:18px auto 0;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));animation:prog 2.5s ease-in-out infinite}
+@keyframes prog{0%{width:0}60%{width:75%}100%{width:100%}}
+
+/* === RESULTS === */
+#results{display:none}
+
+/* VERDICT */
+.verdict{border-radius:14px;padding:24px 28px;margin-bottom:18px;border:1px solid var(--border)}
+.verdict.bull{background:linear-gradient(135deg,rgba(0,255,136,.07),rgba(0,255,136,.01));border-color:rgba(0,255,136,.25)}
+.verdict.bear{background:linear-gradient(135deg,rgba(255,59,92,.07),rgba(255,59,92,.01));border-color:rgba(255,59,92,.25)}
+.verdict.wait{background:linear-gradient(135deg,rgba(255,184,48,.07),rgba(255,184,48,.01));border-color:rgba(255,184,48,.25)}
+.v-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.v-left{display:flex;align-items:center;gap:14px}
+.v-badge{font-family:var(--mono);font-size:12px;font-weight:700;padding:5px 13px;border-radius:5px;letter-spacing:2px}
+.badge-b{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+.badge-s{background:rgba(255,59,92,.12);color:var(--red);border:1px solid rgba(255,59,92,.25)}
+.badge-w{background:rgba(255,184,48,.12);color:var(--amber);border:1px solid rgba(255,184,48,.25)}
+.v-title{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.v-sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:4px}
+.v-summary{margin-top:14px;font-size:14px;color:var(--dim);line-height:1.75;border-top:1px solid var(--border);padding-top:14px}
+
+/* CONFIDENCE RING */
+.ring-wrap{width:88px;height:88px;position:relative;flex-shrink:0}
+.ring-svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--border);stroke-width:5.5}
+.ring-fill{fill:none;stroke-width:5.5;stroke-linecap:round;transition:stroke-dashoffset 1.2s ease}
+.ring-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-pct{font-family:var(--mono);font-size:17px;font-weight:700;line-height:1}
+.ring-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* GRIDS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:620px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px}
+.panel-lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:7px}
+
+/* PHASE TAGS */
+.phase-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.ptag{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid}
+.ptag-on{background:rgba(77,159,255,.1);color:var(--blue);border-color:rgba(77,159,255,.3)}
+.ptag-off{background:var(--bg3);color:var(--muted);border-color:var(--border)}
+
+/* CHECKLIST */
+.chklist{display:flex;flex-direction:column;gap:7px}
+.ch{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;line-height:1.5}
+.ch-icon{width:17px;height:17px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px}
+.c-y{background:rgba(0,255,136,.12);color:var(--green)}
+.c-n{background:rgba(255,59,92,.12);color:var(--red)}
+.c-m{background:rgba(255,184,48,.12);color:var(--amber)}
+.ch-txt{color:var(--dim)}.ch-txt b{color:var(--text);font-weight:600}
+
+/* SIGNALS */
+.sigs{display:flex;flex-direction:column;gap:9px}
+.sig{display:flex;flex-direction:column;gap:3px}
+.sig-h{display:flex;justify-content:space-between;font-size:12px}
+.sig-n{color:var(--dim)}.sig-v{font-family:var(--mono);font-size:11px}
+.sig-track{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.sig-bar{height:100%;border-radius:2px;transition:width 1.2s ease}
+.bar-g{background:linear-gradient(90deg,var(--gdim),var(--green))}
+.bar-r{background:linear-gradient(90deg,#CC2040,var(--red))}
+.bar-a{background:linear-gradient(90deg,#CC8800,var(--amber))}
+.bar-b{background:linear-gradient(90deg,#2260BB,var(--blue))}
+
+/* LEVELS */
+.lvl-tbl{width:100%;border-collapse:collapse}
+.lvl-tbl tr{border-bottom:1px solid var(--border)}
+.lvl-tbl tr:last-child{border-bottom:none}
+.lvl-tbl td{padding:9px 0;font-size:12.5px}
+.lbl{color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.5px;width:42%}
+.val{font-family:var(--mono);font-weight:700;font-size:13px;text-align:right}
+.ve{color:var(--blue)}.vs{color:var(--red)}.vt{color:var(--green)}
+.rr-tag{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(0,255,136,.08);color:var(--green);border:1px solid rgba(0,255,136,.15);margin-left:5px}
+
+/* FULL PANELS */
+.panel-full{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+.narr{font-size:13.5px;color:var(--dim);line-height:1.9;white-space:pre-wrap}
+
+/* FUNDAMENTAL */
+.fund-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:0}
+.fund-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px}
+.fund-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+.fund-val{font-family:var(--mono);font-size:15px;font-weight:700;margin-bottom:2px}
+.fund-desc{font-size:11px;color:var(--dim);line-height:1.4}
+.fv-g{color:var(--green)}.fv-r{color:var(--red)}.fv-a{color:var(--amber)}.fv-b{color:var(--blue)}
+
+/* TABS for multi-chart */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.tab{font-family:var(--mono);font-size:11px;padding:6px 14px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);cursor:pointer;transition:all .2s}
+.tab.active{border-color:var(--green);color:var(--green);background:rgba(0,255,136,.08)}
+
+.disclaimer{margin-top:24px;padding:14px 18px;border:1px solid var(--border);border-radius:9px;background:var(--bg2);font-size:11.5px;color:var(--muted);line-height:1.6;display:flex;gap:9px}
+.reset-bar{display:flex;justify-content:center;margin:24px 0 10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div><div class="logo-name">Sniper Analyzer</div><div class="logo-sub">SMART MONEY INTELLIGENCE</div></div>
+  </div>
+  <div class="online"><div class="dot"></div>AI ONLINE · Wyckoff + Smart Money</div>
+</header>
+
+<main>
+  <!-- UPLOAD -->
+  <div id="upload-sec">
+    <div class="sec-label">INPUT CHART</div>
+    <div class="drop-zone" id="dz">
+      <span class="dz-icon">📊</span>
+      <div class="dz-title">Upload Screenshot Chart</div>
+      <div class="dz-sub">
+        Drag &amp; drop atau klik pilih file<br>
+        <b>Bisa upload beberapa chart sekaligus</b> (multi-timeframe: M15 + H1 + H4 + D1)<br>
+        Support semua pair · Forex · Crypto · Saham · Komoditas
+      </div>
+      <button class="btn-upload" onclick="document.getElementById('file-in').click()">📁 Pilih Screenshot Chart</button>
+      <input type="file" id="file-in" accept="image/*" multiple>
+    </div>
+  </div>
+
+  <!-- THUMBS + CONTROLS -->
+  <div class="thumbs-section" id="thumbs-sec">
+    <div class="sec-label">CHART YANG DIUPLOAD (<span id="img-count">0</span>)</div>
+    <div class="thumbs-grid" id="thumbs-grid"></div>
+
+    <div style="margin-bottom:12px">
+      <div class="tf-label">TIMEFRAME UTAMA YANG DIANALISIS:</div>
+      <div class="tf-row" id="tf-row">
+        <button class="tf-btn sel" data-tf="M15">M15</button>
+        <button class="tf-btn" data-tf="M30">M30</button>
+        <button class="tf-btn" data-tf="H1">H1</button>
+        <button class="tf-btn" data-tf="H4">H4</button>
+        <button class="tf-btn" data-tf="D1">D1</button>
+        <button class="tf-btn" data-tf="W1">W1</button>
+        <button class="tf-btn" data-tf="MN">MN</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-analyze" onclick="analyzeCharts()">🎯 Analisis Sekarang</button>
+      <button class="btn-reset" onclick="resetAll()">↩ Reset</button>
+      <button class="btn-upload" onclick="document.getElementById('file-in').click()" style="background:var(--bg3);color:var(--dim);border:1px solid var(--border)">+ Tambah Chart</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="spin-wrap"><div class="spin-inner">🔍</div></div>
+    <div class="loading-title">Menganalisis Chart...</div>
+    <div class="loading-step" id="lstep">Membaca struktur pasar...</div>
+    <div class="prog-bar"><div class="prog-fill"></div></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="sec-label">HASIL ANALISIS</div>
+
+    <!-- TABS for multi-chart -->
+    <div class="tabs" id="result-tabs" style="display:none"></div>
+
+    <!-- VERDICT -->
+    <div class="verdict" id="v-card">
+      <div class="v-top">
+        <div class="v-left">
+          <span class="v-badge" id="v-badge">WAIT</span>
+          <div>
+            <div class="v-title" id="v-title">—</div>
+            <div class="v-sub" id="v-sub">—</div>
+          </div>
+        </div>
+        <div class="ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 90 90">
+            <circle class="ring-bg" cx="45" cy="45" r="36"/>
+            <circle class="ring-fill" id="ring-c" cx="45" cy="45" r="36" stroke-dasharray="226" stroke-dashoffset="226"/>
+          </svg>
+          <div class="ring-txt"><div class="ring-pct" id="ring-pct">0%</div><div class="ring-lbl">AKURASI</div></div>
+        </div>
+      </div>
+      <div class="v-summary" id="v-sum">—</div>
+    </div>
+
+    <!-- FUNDAMENTAL -->
+    <div class="panel-full" id="fund-panel">
+      <div class="panel-lbl">🌐 ANALISIS FUNDAMENTAL GLOBAL & KORELASI</div>
+      <div class="fund-grid" id="fund-grid"></div>
+      <div style="margin-top:12px;font-size:12.5px;color:var(--dim);line-height:1.8" id="fund-narr"></div>
+    </div>
+
+    <!-- GRID ROW 1 -->
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-lbl">🔄 WYCKOFF PHASE</div>
+        <div class="phase-row" id="phase-row"></div>
+        <div class="chklist" id="wycklist"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-lbl">📡 KEKUATAN SINYAL</div>
+        <div class="sigs" id="sigs"></div>
+      </div>
+    </div>
+
+    <!-- GRID ROW 2 -->
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-lbl">🎯 EKSEKUSI SNIPER</div>
+        <table class="lvl-tbl">
+          <tr><td class="lbl">ENTRY ZONE</td><td class="val ve" id="l-entry">—</td></tr>
+          <tr><td class="lbl">STOP LOSS</td><td class="val vs" id="l-sl">—</td></tr>
+          <tr><td class="lbl">TAKE PROFIT 1</td><td class="val vt" id="l-tp1">—</td></tr>
+          <tr><td class="lbl">TAKE PROFIT 2</td><td class="val vt" id="l-tp2">—</td></tr>
+          <tr><td class="lbl">RISK:REWARD</td><td class="val" id="l-rr">—</td></tr>
+        </table>
+      </div>
+      <div class="panel">
+        <div class="panel-lbl">🕯️ POLA CANDLESTICK</div>
+        <div class="chklist" id="candlelist"></div>
+      </div>
+    </div>
+
+    <!-- NARASI LENGKAP -->
+    <div class="panel-full">
+      <div class="panel-lbl">📋 NARASI ANALISIS LENGKAP</div>
+      <div class="narr" id="narr">—</div>
+    </div>
+
+    <!-- SKENARIO -->
+    <div class="panel-full">
+      <div class="panel-lbl">🗺️ SKENARIO & CHECKLIST EKSEKUSI</div>
+      <div class="chklist" id="scenlist"></div>
+    </div>
+
+    <div class="reset-bar">
+      <button class="btn-reset" onclick="resetAll()" style="padding:12px 32px;font-size:14px">↩ Analisis Chart Baru</button>
+    </div>
+
+    <div class="disclaimer">
+      <span>⚠️</span>
+      <span><b style="color:var(--amber)">Disclaimer:</b> Analisis ini bersifat edukatif berdasarkan logika Price Action, Smart Money, dan korelasi fundamental. Bukan rekomendasi investasi. Selalu gunakan manajemen risiko yang baik. Trading mengandung risiko kehilangan modal.</span>
+    </div>
+  </div>
+</main>
+
+<script>
+const STEPS=["Membaca struktur pasar (Wyckoff Cycle)...","Mengidentifikasi zona Supply & Demand...","Mendeteksi pola S&R dan RBS/SBR...","Membaca kompresi likuiditas & pennant...","Menganalisis anatomi candlestick...","Korelasi DXY · US10Y · US30Y · Fed Policy...","Menghitung Risk-to-Reward Ratio...","Menyusun narasi eksekusi sniper..."];
+
+let files=[];
+let selectedTF="M15";
+
+// TF buttons
+document.querySelectorAll('.tf-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.tf-btn').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+    selectedTF=b.dataset.tf;
+  });
+});
+
+// Drag & Drop
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');addFiles([...e.dataTransfer.files].filter(f=>f.type.startsWith('image/')))});
+dz.addEventListener('click',e=>{if(e.target===dz||e.target.classList.contains('dz-icon')||e.target.classList.contains('dz-title')||e.target.classList.contains('dz-sub'))document.getElementById('file-in').click()});
+
+document.getElementById('file-in').addEventListener('change',e=>{
+  addFiles([...e.target.files]);
+  e.target.value='';
+});
+
+function addFiles(newFiles){
+  files=[...files,...newFiles];
+  renderThumbs();
+  document.getElementById('upload-sec').style.display='none';
+  document.getElementById('thumbs-sec').style.display='block';
+}
+
+function removeFile(idx){
+  files.splice(idx,1);
+  if(!files.length){resetAll();return;}
+  renderThumbs();
+}
+
+function renderThumbs(){
+  document.getElementById('img-count').textContent=files.length;
+  const g=document.getElementById('thumbs-grid');
+  g.innerHTML='';
+  files.forEach((f,i)=>{
+    const url=URL.createObjectURL(f);
+    const d=document.createElement('div');
+    d.className='thumb-item active';
+    d.innerHTML=`<img src="${url}" alt=""><div class="thumb-del" onclick="removeFile(${i})">✕</div>`;
+    g.appendChild(d);
+  });
+  // add button
+  const add=document.createElement('div');
+  add.className='thumb-add';
+  add.innerHTML=`<div class="thumb-add-icon">+</div><span>Tambah</span>`;
+  add.onclick=()=>document.getElementById('file-in').click();
+  g.appendChild(add);
+}
+
+function resetAll(){
+  files=[];
+  document.getElementById('upload-sec').style.display='block';
+  document.getElementById('thumbs-sec').style.display='none';
+  document.getElementById('loading').style.display='none';
+  document.getElementById('results').style.display='none';
+}
+
+async function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
+async function analyzeCharts(){
+  if(!files.length)return;
+
+  document.getElementById('thumbs-sec').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('results').style.display='none';
+
+  let si=0;
+  const sl=document.getElementById('lstep');
+  const si2=setInterval(()=>{sl.textContent=STEPS[si%STEPS.length];si++},650);
+
+  const SYSTEM=`Kamu adalah AI Trading Analyst elite yang menguasai:
+- Wyckoff Market Cycle (Accumulation, Markup, Distribution, Markdown)
+- Smart Money Concepts (Institusi vs Retail, Liquidity Hunt, Fakeout)
+- Supply & Demand Zone (Imbalance/Order Block — Marubozu/Big Belt Candle)
+- Support & Resistance Psikologis + RBS/SBR (Resistance Become Support)
+- Price Action & Candlestick: Pinbar/Hammer, Bullish/Bearish Engulfing, Marubozu
+- Multi-Timeframe Analysis (D1 → H4 → H1 → M15 sebagai trigger sniper)
+- Liquidity Compression: Symmetrical Triangle, Bullish/Bearish Pennant
+- Risk-to-Reward Management (SL di luar struktur, TP di Major Resistance)
+
+FUNDAMENTAL GLOBAL (wajib analisis korelasi):
+- DXY (US Dollar Index): Korelasi terbalik dengan Gold/Pair non-USD. DXY naik = Gold turun.
+- US10Y (US Treasury 10-Year Yield): Saat yield naik, aset berisiko tertekan, USD menguat.
+- US30Y (US Treasury 30-Year Yield): Sentimen jangka panjang investor. Naik = risk-off.
+- Fed Policy (Suku Bunga The Fed): Rate naik = USD kuat, Gold/Crypto tertekan.
+- CPI/Inflasi: Inflasi tinggi bisa pro-Gold sebagai hedge, tapi juga mungkin memaksa Fed naikkan rate.
+- NFP (Non-Farm Payroll): Data kuat = USD kuat = tekan Gold/pair non-USD.
+- Geopolitik & Safe Haven: Perang, krisis banking = Gold naik terlepas teknikal.
+- Risk-On vs Risk-Off: Pahami sentimen pasar saat ini.
+
+Jika diberikan beberapa chart (multi-timeframe), analisis secara TERINTEGRASI:
+- D1/W1 = Big picture trend + major S&D zone
+- H4/H1 = Struktur intraday + konsolidasi
+- M15/M30 = Trigger eksekusi sniper (Pinbar, Engulfing di zona kunci)
+
+Jawab HANYA dalam format JSON valid (tanpa markdown, tanpa backtick, tanpa komentar):
+{
+  "direction": "BUY" atau "SELL" atau "WAIT",
+  "confidence": angka 0-100,
+  "verdict_title": "judul singkat sinyal",
+  "verdict_sub": "Pair & Timeframe terdeteksi",
+  "verdict_summary": "ringkasan 2-3 kalimat mengapa arah ini",
+  "wyckoff_phase": {"detected":"nama fase","description":"penjelasan fase di chart ini"},
+  "market_structure": {"trend":"Uptrend/Downtrend/Sideways","hh_hl":true/false,"ll_lh":true/false,"description":"penjelasan"},
+  "fundamental": {
+    "dxy": {"direction":"Bullish/Bearish/Neutral","impact":"penjelasan dampak ke aset ini","color":"g/r/a"},
+    "us10y": {"direction":"Naik/Turun/Flat","impact":"penjelasan dampak","color":"g/r/a"},
+    "us30y": {"direction":"Naik/Turun/Flat","impact":"penjelasan dampak","color":"g/r/a"},
+    "fed_policy": {"stance":"Hawkish/Dovish/Neutral","impact":"penjelasan","color":"g/r/a"},
+    "geopolitik": {"sentiment":"Risk-On/Risk-Off/Neutral","impact":"penjelasan","color":"g/r/a"},
+    "correlation_summary": "Narasi 3-5 kalimat bagaimana semua faktor fundamental ini berkorelasi dan mendukung/menentang arah teknikal yang terdeteksi."
+  },
+  "key_levels": {"entry_zone":"level","stop_loss":"level SL","tp1":"TP1","tp2":"TP2","risk_reward":"misal 1:2.5"},
+  "signals": [
+    {"name":"Struktur Wyckoff","strength":0-100,"color":"green/red/amber/blue"},
+    {"name":"Zona S&D","strength":0-100,"color":"green/red/amber/blue"},
+    {"name":"S&R / RBS","strength":0-100,"color":"green/red/amber/blue"},
+    {"name":"Price Action","strength":0-100,"color":"green/red/amber/blue"},
+    {"name":"Kompresi Likuiditas","strength":0-100,"color":"green/red/amber/blue"},
+    {"name":"Fundamental Global","strength":0-100,"color":"green/red/amber/blue"}
+  ],
+  "wyckoff_checklist": [
+    {"ok":true/false/"maybe","label":"kondisi","detail":"penjelasan"}
+  ],
+  "candle_patterns": [
+    {"ok":true/false/"maybe","label":"nama pola","detail":"penjelasan"}
+  ],
+  "narrative": "Narasi mendalam 8-12 paragraf. Bedah: (1) Konteks fundamental global & korelasi DXY/US10Y/US30Y, (2) Struktur Wyckoff di timeframe besar, (3) Zona S&D dan logika institusi, (4) RBS/SBR jika ada, (5) Kompresi likuiditas dan niat bandar, (6) Anatomi candlestick konfirmasi, (7) Rencana eksekusi sniper dengan SL dan TP logis, (8) Manajemen risiko.",
+  "execution_checklist": [
+    {"ok":true/false/"maybe","label":"langkah","detail":"penjelasan"}
+  ]
+}`;
+
+  try {
+    // Build content array with all images
+    const contentArr=[];
+
+    // Add all images
+    for(let i=0;i<files.length;i++){
+      const b64=await fileToBase64(files[i]);
+      contentArr.push({
+        type:"image",
+        source:{type:"base64",media_type:files[i].type||"image/jpeg",data:b64}
+      });
+    }
+
+    // Add text instruction
+    const tf_info=files.length>1?`Saya upload ${files.length} chart untuk analisis multi-timeframe terintegrasi.`:`Saya upload 1 chart timeframe ${selectedTF}.`;
+    contentArr.push({
+      type:"text",
+      text:`${tf_info} Timeframe utama: ${selectedTF}. Analisis secara komprehensif dengan metodologi Wyckoff, Smart Money, dan korelasi fundamental global (DXY, US10Y, US30Y, Fed Policy). Berikan output JSON lengkap.`
+    });
+
+    const resp=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:1000,
+        system:SYSTEM,
+        messages:[{role:"user",content:contentArr}]
+      })
+    });
+
+    clearInterval(si2);
+
+    if(!resp.ok){
+      const errText=await resp.text();
+      throw new Error(`API Error ${resp.status}: ${errText}`);
+    }
+
+    const data=await resp.json();
+    const rawText=(data.content||[]).map(b=>b.text||'').join('');
+
+    let analysis;
+    try{
+      const clean=rawText.replace(/```json|```/g,'').trim();
+      analysis=JSON.parse(clean);
+    }catch(e){
+      const m=rawText.match(/\{[\s\S]*\}/);
+      if(m)analysis=JSON.parse(m[0]);
+      else throw new Error("JSON parse gagal: "+rawText.substring(0,300));
+    }
+
+    renderResults(analysis);
+
+  }catch(err){
+    clearInterval(si2);
+    console.error("Error detail:",err);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('thumbs-sec').style.display='block';
+
+    // Show friendly error
+    const errBox=document.createElement('div');
+    errBox.style.cssText='background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.3);border-radius:10px;padding:16px;margin-bottom:16px;font-size:13px;color:#FF8888;line-height:1.7';
+    errBox.innerHTML=`<b style="color:var(--red)">⚠️ Kesalahan Analisis</b><br>${err.message}<br><br><b>Kemungkinan penyebab:</b><br>• File HTML perlu dibuka via server (bukan file:// atau content://)<br>• Gunakan Claude.ai web atau deploy ke web server<br>• Cek koneksi internet`;
+    document.getElementById('thumbs-sec').insertAdjacentElement('beforebegin',errBox);
+  }
+}
+
+function renderResults(a){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('results').style.display='block';
+
+  const dir=(a.direction||'WAIT').toUpperCase();
+  const conf=parseInt(a.confidence)||70;
+
+  // Verdict
+  const vc=document.getElementById('v-card');
+  vc.className='verdict '+(dir==='BUY'?'bull':dir==='SELL'?'bear':'wait');
+  const vb=document.getElementById('v-badge');
+  vb.className='v-badge '+(dir==='BUY'?'badge-b':dir==='SELL'?'badge-s':'badge-w');
+  vb.textContent=dir==='BUY'?'▲ BUY':dir==='SELL'?'▼ SELL':'⏸ WAIT';
+  const vt=document.getElementById('v-title');
+  vt.textContent=a.verdict_title||'Analisis Selesai';
+  vt.style.color=dir==='BUY'?'var(--green)':dir==='SELL'?'var(--red)':'var(--amber)';
+  document.getElementById('v-sub').textContent=a.verdict_sub||'';
+  document.getElementById('v-sum').textContent=a.verdict_summary||'';
+
+  // Confidence ring
+  const circ=226;
+  const off=circ-((conf/100)*circ);
+  const rc=document.getElementById('ring-c');
+  rc.style.strokeDashoffset=off;
+  rc.style.stroke=dir==='BUY'?'#00FF88':dir==='SELL'?'#FF3B5C':'#FFB830';
+  const rp=document.getElementById('ring-pct');
+  rp.textContent=conf+'%';
+  rp.style.color=dir==='BUY'?'#00FF88':dir==='SELL'?'#FF3B5C':'#FFB830';
+
+  // FUNDAMENTAL
+  const fn=a.fundamental||{};
+  const fg=document.getElementById('fund-grid');
+  fg.innerHTML='';
+
+  const fundItems=[
+    {key:'dxy',title:'DXY',icon:'💵'},
+    {key:'us10y',title:'US10Y',icon:'📈'},
+    {key:'us30y',title:'US30Y',icon:'📊'},
+    {key:'fed_policy',title:'FED POLICY',icon:'🏦'},
+    {key:'geopolitik',title:'GEOPOLITIK',icon:'🌍'},
+  ];
+
+  fundItems.forEach(({key,title,icon})=>{
+    const fd=fn[key]||{};
+    const dirVal=fd.direction||fd.stance||fd.sentiment||'—';
+    const col=fd.color==='g'?'fv-g':fd.color==='r'?'fv-r':fd.color==='a'?'fv-a':'fv-b';
+    fg.innerHTML+=`<div class="fund-card">
+      <div class="fund-title">${icon} ${title}</div>
+      <div class="fund-val ${col}">${dirVal}</div>
+      <div class="fund-desc">${fd.impact||'—'}</div>
+    </div>`;
+  });
+
+  document.getElementById('fund-narr').textContent=fn.correlation_summary||'';
+
+  // Wyckoff phase
+  const phases=['Accumulation','Markup','Distribution','Markdown','Transition'];
+  const det=(a.wyckoff_phase?.detected||'').toLowerCase();
+  const pr=document.getElementById('phase-row');
+  pr.innerHTML=phases.map(p=>`<span class="ptag ${det.includes(p.toLowerCase())?'ptag-on':'ptag-off'}">${p}</span>`).join('');
+
+  // Wyckoff checklist
+  const ms=a.market_structure||{};
+  const wl=[
+    {ok:ms.hh_hl?true:false,label:'Higher High / Higher Low',detail:'Konfirmasi uptrend'},
+    {ok:ms.ll_lh?true:false,label:'Lower Low / Lower High',detail:'Konfirmasi downtrend'},
+    ...(a.wyckoff_checklist||[])
+  ];
+  renderList('wycklist',wl);
+
+  // Signals
+  const se=document.getElementById('sigs');
+  se.innerHTML='';
+  (a.signals||[]).forEach(s=>{
+    const bc=s.color==='green'?'bar-g':s.color==='red'?'bar-r':s.color==='amber'?'bar-a':'bar-b';
+    const vc2=s.strength>=70?'var(--green)':s.strength>=40?'var(--amber)':'var(--red)';
+    se.innerHTML+=`<div class="sig">
+      <div class="sig-h"><span class="sig-n">${s.name}</span><span class="sig-v" style="color:${vc2}">${s.strength}%</span></div>
+      <div class="sig-track"><div class="sig-bar ${bc}" style="width:0" data-w="${s.strength}%"></div></div>
+    </div>`;
+  });
+  setTimeout(()=>{document.querySelectorAll('.sig-bar').forEach(b=>b.style.width=b.dataset.w)},100);
+
+  // Levels
+  const kl=a.key_levels||{};
+  document.getElementById('l-entry').textContent=kl.entry_zone||'—';
+  document.getElementById('l-sl').textContent=kl.stop_loss||'—';
+  document.getElementById('l-tp1').textContent=kl.tp1||'—';
+  document.getElementById('l-tp2').textContent=kl.tp2||'—';
+  const rre=document.getElementById('l-rr');
+  rre.innerHTML=(kl.risk_reward||'—')+(kl.risk_reward?`<span class="rr-tag">RR</span>`:'');
+
+  // Candle
+  renderList('candlelist',a.candle_patterns||[]);
+
+  // Narrative
+  document.getElementById('narr').textContent=a.narrative||'—';
+
+  // Execution
+  renderList('scenlist',a.execution_checklist||[]);
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderList(id,items){
+  const el=document.getElementById(id);
+  el.innerHTML=(items||[]).map(it=>{
+    const ok=it.ok;
+    const ic=ok===true?'c-y':ok===false?'c-n':'c-m';
+    const sym=ok===true?'✓':ok===false?'✕':'?';
+    return `<div class="ch"><div class="ch-icon ${ic}">${sym}</div><div class="ch-txt"><b>${it.label}</b>${it.detail?' — '+it.detail:''}</div></div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
